@@ -2,9 +2,9 @@ trigger:
 - '*'
 
 variables:
-  buildConfiguration: 'Release'
-  webRepository: 'web'
-  tag: '$(Build.BuildId)'
+    imageRepository: 'javascriptdocker'
+    dockerfilePath: '$(Build.SourcesDirectory)/app/Dockerfile'
+    tag: '$(Build.BuildId)'
 
 stages:
 - stage: 'Build'
@@ -13,7 +13,7 @@ stages:
   - job: 'Build'
     displayName: 'Build job'
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-latest'
     steps:
     - task: Cache@2
       displayName: Cache task
@@ -30,15 +30,16 @@ stages:
     - task: Docker@2
       displayName: 'Build Image'
       inputs:
-        repository: 'myrepo'
+        repository: $(imageRepository)
         command: 'build'
-        Dockerfile: 'Dockerfile'
+        Dockerfile: $(dockerfilePath)
         buildContext: '$(Build.SourcesDirectory)'
-        tags: 'myimagename'
+        tags: |
+            $(tag)
 
     - script: |
         mkdir -p $(Pipeline.Workspace)/docker
-        docker save -o $(Pipeline.Workspace)/docker/cache.tar myrepo:myimagename
+        docker save -o $(Pipeline.Workspace)/docker/cache.tar $(imageRepository):$(tag)
       displayName: Docker save
       condition: and(not(canceled()), or(failed(), ne(variables.CACHE_RESTORED, 'true')))
 
